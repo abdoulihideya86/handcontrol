@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🧠 عقلي</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#04040a;
+  --accent:#00ffe0;
+  --accent2:#ff3cac;
+  --accent3:#f5c400;
+  --accent4:#7c6aff;
+  --node-bg:rgba(8,8,18,0.94);
+  --text:#e8e8f8;
+  --muted:rgba(232,232,248,0.45);
+  --grid:rgba(255,255,255,0.025);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text);touch-action:none;}
+
+/* grid */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;z-index:0;}
+
+/* ambient */
+#ambient{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(124,106,255,0.07) 0%,transparent 65%);}
+
+canvas{position:fixed;inset:0;z-index:1;pointer-events:none;}
+
+/* ── NODES ── */
+.node{
+  position:fixed;z-index:10;
+  min-width:100px;max-width:190px;
+  padding:11px 13px;
+  background:var(--node-bg);
+  border:1px solid rgba(0,255,224,0.2);
+  border-radius:14px;
+  backdrop-filter:blur(18px);
+  touch-action:none;
+  transition:border-color .2s,box-shadow .2s,transform .15s;
+  animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
+
+.node.brain{
+  border-color:var(--accent4)!important;
+  box-shadow:0 0 32px rgba(124,106,255,.4),0 0 80px rgba(124,106,255,.12);
+  min-width:130px;
+  background:rgba(14,12,30,0.97);
+}
+.node.brain .nlabel{color:var(--accent4);font-size:16px;font-weight:900;}
+
+.node.topic{border-color:rgba(245,196,0,.45);box-shadow:0 0 16px rgba(245,196,0,.2);}
+.node.idea{border-color:rgba(255,60,172,.35);}
+.node.child{border-color:rgba(0,255,224,.2);}
+.node.open{border-color:var(--accent);box-shadow:0 0 18px rgba(0,255,224,.3);}
+
+.nlabel{font-size:13px;font-weight:700;line-height:1.35;word-break:break-word;}
+.ntag{display:inline-block;font-size:9px;padding:1px 8px;border-radius:20px;margin-top:5px;
+  background:rgba(0,255,224,.08);color:var(--accent);border:1px solid rgba(0,255,224,.18);
+  font-family:'Space Mono',monospace;}
+.node.topic .ntag{background:rgba(245,196,0,.1);color:var(--accent3);border-color:rgba(245,196,0,.25);}
+.node.idea .ntag{background:rgba(255,60,172,.1);color:var(--accent2);border-color:rgba(255,60,172,.25);}
+.node.brain .ntag{background:rgba(124,106,255,.12);color:var(--accent4);border-color:rgba(124,106,255,.3);}
+
+.nsub{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.5;display:none;}
+.node.open .nsub{display:block;}
+.ncount{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Space Mono',monospace;}
+
+.nactions{display:none;gap:5px;margin-top:8px;}
+.node.open .nactions{display:flex;}
+.btn{flex:1;padding:5px 2px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);
+  color:var(--muted);border-radius:7px;font-size:10px;font-family:'Tajawal',sans-serif;font-weight:700;
+  cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:active{background:rgba(0,255,224,.12);color:var(--accent);border-color:rgba(0,255,224,.3);}
+.btn.danger:active{background:rgba(255,60,172,.12);color:var(--accent2);border-color:rgba(255,60,172,.3);}
+
+/* ── TOPBAR ── */
+#topbar{position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;gap:8px;padding:10px 12px;
+  background:rgba(4,4,10,.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.06);}
+.logo{font-size:18px;font-weight:900;color:var(--accent4);white-space:nowrap;letter-spacing:-0.5px;}
+.logo span{color:var(--accent2);}
+
+/* mode toggle */
+#mode-toggle{display:flex;background:rgba(255,255,255,.05);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08);}
+.mode-btn{padding:7px 11px;font-size:11px;font-family:'Tajawal',sans-serif;font-weight:700;
+  background:none;border:none;color:var(--muted);cursor:pointer;transition:all .15s;}
+.mode-btn.active{background:rgba(124,106,255,.2);color:var(--accent4);}
+
+/* input area */
+#input-area{display:flex;flex:1;gap:6px;}
+#main-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Tajawal',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s;}
+#main-input:focus{border-color:var(--accent4);}
+#main-input::placeholder{color:var(--muted);}
+#add-btn{padding:8px 14px;background:var(--accent4);color:#fff;border:none;border-radius:8px;
+  font-family:'Tajawal',sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}
+#add-btn:active{transform:scale(.95);}
+
+/* ── TOPIC PILLS ── */
+#pills-bar{position:fixed;top:56px;left:0;right:0;z-index:199;
+  display:flex;gap:5px;padding:6px 12px;overflow-x:auto;scrollbar-width:none;
+  background:rgba(4,4,10,.75);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.04);}
+#pills-bar::-webkit-scrollbar{display:none;}
+.pill{padding:3px 11px;border-radius:20px;border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'Tajawal',sans-serif;
+  font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.pill:active,.pill.active{background:rgba(245,196,0,.12);color:var(--accent3);border-color:rgba(245,196,0,.4);}
+
+/* ── STATS BAR ── */
+#statsbar{position:fixed;bottom:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 14px;background:rgba(4,4,10,.85);backdrop-filter:blur(12px);
+  border-top:1px solid rgba(255,255,255,.05);}
+.stat{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;}
+.stat span{color:var(--accent4);}
+#hint-txt{font-size:10px;color:rgba(232,232,248,.2);font-family:'Tajawal',sans-serif;}
+
+/* ── PULSE on brain ── */
+@keyframes brainPulse{
+  0%,100%{box-shadow:0 0 32px rgba(124,106,255,.4),0 0 80px rgba(124,106,255,.12);}
+  50%{box-shadow:0 0 48px rgba(124,106,255,.65),0 0 110px rgba(124,106,255,.2);}
+}
+.node.brain{animation:brainPulse 3s infinite,popIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);
+  z-index:300;padding:8px 18px;border-radius:20px;background:rgba(124,106,255,.2);
+  border:1px solid rgba(124,106,255,.4);color:var(--accent4);font-size:12px;
+  font-family:'Tajawal',sans-serif;font-weight:700;opacity:0;transition:opacity .3s;
+  pointer-events:none;white-space:nowrap;}
+
+/* ── IDEA MODE input highlight ── */
+#main-input.idea-mode{border-color:rgba(255,60,172,.5);}
+#main-input.topic-mode{border-color:rgba(245,196,0,.5);}
+</style>
+</head>
+<body>
+
+<div id="ambient"></div>
+<canvas id="canvas"></canvas>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">🧠<span>عقلي</span></div>
+  <div id="mode-toggle">
+    <button class="mode-btn active" id="btn-topic" onclick="setMode('topic')">📚 موضوع</button>
+    <button class="mode-btn" id="btn-idea" onclick="setMode('idea')">💡 فكرة</button>
+  </div>
+  <div id="input-area">
+    <input id="main-input" type="text" placeholder="أضف موضوعاً..." maxlength="50" />
+    <button id="add-btn" onclick="addNode()">+</button>
+  </div>
+</div>
+
+<!-- TOPIC PILLS -->
+<div id="pills-bar"></div>
+
+<!-- STATS -->
+<div id="statsbar">
+  <div class="stat">عقد: <span id="s-nodes">0</span></div>
+  <div id="hint-txt">اضغط على عقدة للتفاصيل · اسحب · إصبعان للتحريك</div>
+  <div class="stat">روابط: <span id="s-edges">0</span></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════
+// KNOWLEDGE BASE (predefined topics)
+// ════════════════════════════════
+const TOPICS = {
+  "🕌 الإسلام":{tag:"دين",color:"topic",children:[
+    {l:"أركان الإسلام",t:"أساس",s:"الشهادة، الصلاة، الزكاة، الصوم، الحج.",sub:[
+      {l:"الشهادة",t:"عقيدة",s:"لا إله إلا الله محمد رسول الله."},
+      {l:"الصلاة",t:"عبادة",s:"خمس صلوات يومياً تجاه القبلة."},
+      {l:"الزكاة",t:"صدقة",s:"2.5% من المدخرات سنوياً للمحتاجين."},
+      {l:"الصوم",t:"عبادة",s:"الإمساك عن الطعام والشراب في رمضان."},
+      {l:"الحج",t:"عبادة",s:"زيارة البيت الحرام مرة في العمر للمستطيع."}
+    ]},
+    {l:"أركان الإيمان",t:"عقيدة",s:"الإيمان بالله، ملائكته، كتبه، رسله، اليوم الآخر، القدر.",sub:[
+      {l:"توحيد الله",t:"عقيدة",s:"إفراد الله بالعبادة والطاعة."},
+      {l:"الملائكة",t:"غيب",s:"مخلوقون من نور يطيعون الله."},
+      {l:"الكتب المقدسة",t:"وحي",s:"القرآن والتوراة والزبور والإنجيل."},
+      {l:"الأنبياء والرسل",t:"هداية",s:"من آدم إلى محمد ﷺ."},
+      {l:"يوم القيامة",t:"آخرة",s:"كل نفس محاسبة على ما قدمت."},
+      {l:"القضاء والقدر",t:"إيمان",s:"كل شيء بعلم الله وإرادته."}
+    ]},
+    {l:"القرآن الكريم",t:"كتاب",s:"114 سورة و6236 آية — كلام الله المنزل.",sub:[
+      {l:"سورة الفاتحة",t:"سورة",s:"أم الكتاب — تُقرأ في كل ركعة."},
+      {l:"آية الكرسي",t:"آية",s:"أعظم آية في القرآن."},
+      {l:"أحكام التجويد",t:"تلاوة",s:"قواعد النطق الصحيح لحروف القرآن."}
+    ]},
+    {l:"السيرة النبوية",t:"سيرة",s:"حياة النبي محمد ﷺ وأخلاقه.",sub:[
+      {l:"المولد في مكة",t:"تاريخ",s:"ولد عام 570م، عام الفيل."},
+      {l:"الهجرة للمدينة",t:"تاريخ",s:"تمثل بداية التقويم الهجري."},
+      {l:"الخلق والأخلاق",t:"أخلاق",s:"عُرف بالأمين قبل البعثة."}
+    ]},
+    {l:"الأخلاق الإسلامية",t:"أخلاق",s:"الصدق، الصبر، الشكر، الرحمة، العدل.",sub:[
+      {l:"الصبر",t:"فضيلة",s:"الصبر على المصائب من أعظم الفضائل."},
+      {l:"الشكر",t:"فضيلة",s:"شكر الله يزيد النعم ويدفع البلاء."},
+      {l:"العدل",t:"قيمة",s:"العدل واجب في كل المعاملات."}
+    ]}
+  ]},
+  "🧒 الأطفال":{tag:"تعليم",color:"topic",children:[
+    {l:"الحروف العربية",t:"لغة",s:"28 حرفاً — أساس القراءة والكتابة.",sub:[
+      {l:"ا ب ت ث",t:"حروف",s:"أول أربعة حروف في الأبجدية."},
+      {l:"الحركات",t:"تشكيل",s:"الفتحة والكسرة والضمة."},
+      {l:"حروف الشمس والقمر",t:"قاعدة",s:"تحدد اندغام اللام في الحرف التالي."}
+    ]},
+    {l:"الأرقام والحساب",t:"رياضيات",s:"العد والجمع والطرح.",sub:[
+      {l:"العد 1-10",t:"أساس",s:"أساس كل رياضيات."},
+      {l:"الجمع والطرح",t:"عمليات",s:"إضافة الأعداد وإزالتها."},
+      {l:"الأشكال الهندسية",t:"هندسة",s:"دائرة، مثلث، مربع، مستطيل."}
+    ]},
+    {l:"عالم الحيوانات",t:"علوم",s:"مخلوقات البر والبحر والهواء.",sub:[
+      {l:"حيوانات المزرعة",t:"أليف",s:"بقرة، خروف، دجاجة."},
+      {l:"الحيوانات البرية",t:"بري",s:"أسد، فيل، زرافة."},
+      {l:"حيوانات البحر",t:"بحري",s:"سمك، حوت، دلفين."}
+    ]},
+    {l:"القصص والقيم",t:"أخلاق",s:"حكايات تعلم الصدق والكرم والشجاعة.",sub:[
+      {l:"الصدق",t:"قيمة",s:"قول الحق يبني الثقة."},
+      {l:"المشاركة",t:"قيمة",s:"العطاء للآخرين يسعد الجميع."},
+      {l:"الشجاعة",t:"قيمة",s:"فعل الصواب حتى عندما يكون صعباً."}
+    ]}
+  ]},
+  "🔬 العلوم":{tag:"معرفة",color:"topic",children:[
+    {l:"جسم الإنسان",t:"أحياء",s:"نظام معقد من الأعضاء والخلايا.",sub:[
+      {l:"الجهاز الهضمي",t:"جهاز",s:"يحول الطعام إلى طاقة."},
+      {l:"الجهاز العصبي",t:"جهاز",s:"الدماغ يتحكم في كل وظائف الجسم."},
+      {l:"الجهاز الدوري",t:"جهاز",s:"القلب يضخ الدم حاملاً الأكسجين."}
+    ]},
+    {l:"الفضاء والكون",t:"فلك",s:"النجوم والكواكب والمجرات.",sub:[
+      {l:"المجموعة الشمسية",t:"كواكب",s:"8 كواكب تدور حول الشمس."},
+      {l:"النجوم",t:"فلك",s:"كتل ضخمة من الغاز تنتج الضوء."},
+      {l:"الثقوب السوداء",t:"ظاهرة",s:"تجاذبها قوي يمنع حتى الضوء."}
+    ]},
+    {l:"الفيزياء",t:"قوى",s:"قوانين تحكم الحركة والطاقة.",sub:[
+      {l:"قوانين نيوتن",t:"حركة",s:"3 قوانين تصف تأثير القوى."},
+      {l:"الجاذبية",t:"قوة",s:"تجاذب بين الكتل يبقي الكواكب."},
+      {l:"الكهرباء",t:"طاقة",s:"تدفق الإلكترونات عبر الموصلات."}
+    ]}
+  ]},
+  "💻 التقنية":{tag:"رقمي",color:"topic",children:[
+    {l:"الذكاء الاصطناعي",t:"AI",s:"آلات تتعلم وتحل المشكلات.",sub:[
+      {l:"تعلم الآلة",t:"ML",s:"الأنظمة تتعلم من البيانات."},
+      {l:"نماذج اللغة",t:"LLM",s:"ذكاء مدرب على النصوص."},
+      {l:"رؤية الحاسوب",t:"رؤية",s:"ذكاء يفسر الصور والفيديو."}
+    ]},
+    {l:"تطوير الويب",t:"ويب",s:"بناء المواقع والتطبيقات.",sub:[
+      {l:"HTML",t:"هيكل",s:"لغة تحدد بنية المحتوى."},
+      {l:"CSS",t:"تصميم",s:"تُنسق مظهر صفحات الويب."},
+      {l:"JavaScript",t:"برمجة",s:"يضيف التفاعل والديناميكية."}
+    ]},
+    {l:"الأمن الرقمي",t:"أمان",s:"حماية الأنظمة والبيانات.",sub:[
+      {l:"التشفير",t:"حماية",s:"تحويل البيانات لصيغة مشفرة."},
+      {l:"كلمات المرور",t:"أمان",s:"استخدام كلمات قوية وفريدة."},
+      {l:"الاحتيال الإلكتروني",t:"تهديد",s:"رسائل مزيفة تسرق بياناتك."}
+    ]}
+  ]},
+  "🌍 الجغرافيا":{tag:"أرض",color:"topic",children:[
+    {l:"القارات السبع",t:"عالم",s:"آسيا، أفريقيا، أوروبا، أمريكا...",sub:[
+      {l:"آسيا",t:"قارة",s:"أكبر قارة — 4.7 مليار نسمة."},
+      {l:"أفريقيا",t:"قارة",s:"54 دولة — مهد الحضارة."},
+      {l:"أوروبا",t:"قارة",s:"44 دولة غنية بالتاريخ."}
+    ]},
+    {l:"المحيطات",t:"مياه",s:"5 محيطات تغطي 71% من الأرض.",sub:[
+      {l:"المحيط الهادئ",t:"محيط",s:"أكبر محيط في العالم."},
+      {l:"المحيط الأطلسي",t:"محيط",s:"يفصل الأمريكتين عن أوروبا."},
+      {l:"المحيط الهندي",t:"محيط",s:"أدفأ المحيطات — طريق تجاري."}
+    ]},
+    {l:"عجائب الطبيعة",t:"طبيعة",s:"روائع الكوكب الأرضي.",sub:[
+      {l:"غابة الأمازون",t:"غابة",s:"تنتج 20% من أكسجين الأرض."},
+      {l:"الصحراء الكبرى",t:"صحراء",s:"أكبر صحراء حارة — 9 مليون كم²."},
+      {l:"جبل إيفرست",t:"جبل",s:"أعلى قمة — 8849 متراً."}
+    ]}
+  ]},
+  "🌱 الصحة":{tag:"عافية",color:"topic",children:[
+    {l:"التغذية السليمة",t:"غذاء",s:"توازن العناصر الغذائية.",sub:[
+      {l:"البروتينات",t:"مغذيات",s:"تبني العضلات — لحوم وبيض وبقوليات."},
+      {l:"الكربوهيدرات",t:"مغذيات",s:"مصدر الطاقة — خبز وأرز وفواكه."},
+      {l:"الدهون الصحية",t:"مغذيات",s:"أوميغا-3 يدعم الدماغ والقلب."}
+    ]},
+    {l:"الرياضة والحركة",t:"لياقة",s:"التمرين يحسن الصحة الجسدية والنفسية.",sub:[
+      {l:"الكارديو",t:"قلب",s:"الجري والسباحة تقوي القلب."},
+      {l:"تمارين القوة",t:"عضلات",s:"الأوزان تبني الكتلة العضلية."},
+      {l:"الإطالة والمرونة",t:"مرونة",s:"تحافظ على صحة المفاصل."}
+    ]},
+    {l:"الصحة النفسية",t:"عقل",s:"الصحة العاطفية والروحية.",sub:[
+      {l:"إدارة الضغط",t:"تكيف",s:"الذكر والتنفس يقللان التوتر."},
+      {l:"نوم صحي",t:"نوم",s:"7-9 ساعات تحسن الذاكرة."},
+      {l:"العلاقات الاجتماعية",t:"مجتمع",s:"الروابط القوية تحمي الصحة."}
+    ]}
+  ]}
+};
+
+// ════════════════════════════════
+// STATE & PERSISTENCE
+// ════════════════════════════════
+const SAVE_KEY = 'aaqli_brain_v2';
+let state = {nodes:[], edges:[], nextId:1};
+
+function saveState(){
+  const s = {
+    nextId: state.nextId,
+    nodes: state.nodes.map(n=>({
+      id:n.id, label:n.label, tag:n.tag, summary:n.summary,
+      type:n.type, x:n.x, y:n.y, parentId:n.parentId, spawned:n.spawned
+    })),
+    edges: state.edges.map(e=>({from:e.from,to:e.to}))
+  };
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }catch(e){}
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const s = JSON.parse(raw);
+    state.nextId = s.nextId || 1;
+    // Rebuild nodes
+    s.nodes.forEach(nd=>{
+      const n = new MNode(nd.label, nd.x, nd.y, nd.type, nd.tag, nd.summary, nd.parentId, nd.id);
+      n.spawned = nd.spawned || false;
+      state.nodes.push(n);
+    });
+    s.edges.forEach(e=>state.edges.push({from:e.from,to:e.to}));
+    return true;
+  }catch(e){ return false; }
+}
+
+// ════════════════════════════════
+// CANVAS
+// ════════════════════════════════
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W,H;
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+let offset={x:0,y:0}, scale=1;
+
+// ════════════════════════════════
+// NODE CLASS
+// ════════════════════════════════
+class MNode {
+  constructor(label, x, y, type='child', tag='فكرة', summary='', parentId=null, forceId=null){
+    this.id    = forceId !== null ? forceId : state.nextId++;
+    this.label = label;
+    this.tag   = tag;
+    this.summary = summary;
+    this.type  = type;   // 'brain' | 'topic' | 'idea' | 'child'
+    this.x = x; this.y = y;
+    this.parentId = parentId;
+    this.open  = false;
+    this.spawned = false;
+    this.el    = null;
+    this._build();
+  }
+
+  _build(){
+    const el = document.createElement('div');
+    el.className = `node ${this.type}`;
+    el.dataset.id = this.id;
+    const isBrain = this.type==='brain';
+    const hasExpand = !isBrain && this.type!=='idea';
+    el.innerHTML = `
+      <div class="nlabel">${this.label}</div>
+      ${this.summary?`<div class="nsub">${this.summary}</div>`:''}
+      <span class="ntag">${this.tag}</span>
+      <div class="nactions">
+        ${hasExpand?`<button class="btn xbtn">⊕ فرّع</button>`:''}
+        ${!isBrain?`<button class="btn danger dbtn">✕</button>`:''}
+      </div>`;
+    document.body.appendChild(el);
+    this.el = el;
+    this.place();
+    this._bind();
+  }
+
+  place(){
+    const w=this.el.offsetWidth||150, h=this.el.offsetHeight||80;
+    this.el.style.left=(this.x*scale+offset.x-w/2)+'px';
+    this.el.style.top =(this.y*scale+offset.y-h/2)+'px';
+  }
+
+  _bind(){
+    let sx,sy,moved,lt;
+    this.el.addEventListener('touchstart',e=>{
+      if(e.touches.length>1)return;
+      const t=e.touches[0]; sx=t.clientX; sy=t.clientY; moved=false;
+      lt=setTimeout(()=>{ if(!moved) this.toggle(); },500);
+    },{passive:true});
+
+    this.el.addEventListener('touchmove',e=>{
+      if(e.touches.length>1)return;
+      const t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+      if(Math.abs(dx)>5||Math.abs(dy)>5){
+        moved=true; clearTimeout(lt);
+        this.x+=dx/scale; this.y+=dy/scale;
+        sx=t.clientX; sy=t.clientY;
+        this.place(); drawEdges(); saveState();
+      }
+      e.stopPropagation();
+    },{passive:true});
+
+    this.el.addEventListener('touchend',e=>{
+      clearTimeout(lt);
+      if(e.target.tagName==='BUTTON')return;
+      if(!moved) this.toggle();
+      e.stopPropagation();
+    },{passive:true});
+
+    const xb=this.el.querySelector('.xbtn');
+    if(xb){
+      xb.addEventListener('touchstart',e=>{ e.stopPropagation(); e.preventDefault(); this.spawnKB(); },{passive:false});
+      xb.addEventListener('click',e=>e.stopPropagation());
+    }
+    const db=this.el.querySelector('.dbtn');
+    if(db){
+      db.addEventListener('touchstart',e=>{ e.stopPropagation(); e.preventDefault(); this.destroy(); },{passive:false});
+      db.addEventListener('click',e=>e.stopPropagation());
+    }
+  }
+
+  toggle(){
+    this.open=!this.open;
+    this.el.classList.toggle('open',this.open);
+  }
+
+  // Spawn children from KB
+  spawnKB(){
+    if(this.spawned){
+      // collapse children
+      const childIds=state.edges.filter(e=>e.from===this.id).map(e=>e.to);
+      childIds.forEach(id=>{ const n=state.nodes.find(n=>n.id===id); if(n)n.destroy(false); });
+      this.spawned=false;
+      const b=this.el.querySelector('.xbtn'); if(b)b.textContent='⊕ فرّع';
+      saveState(); updateStats(); return;
+    }
+    // Find KB children for this node
+    const kids = findKBChildren(this.label);
+    if(!kids||!kids.length){ toast('لا يوجد محتوى فرعي مسبق لهذه العقدة'); return; }
+    const count=kids.length;
+    kids.forEach((c,i)=>{
+      const a=(i/count)*Math.PI*2-Math.PI/2, d=170+Math.random()*40;
+      const nx=this.x+Math.cos(a)*d, ny=this.y+Math.sin(a)*d;
+      const child=new MNode(c.l,nx,ny,'child',c.t,c.s||'',this.id);
+      state.nodes.push(child);
+      state.edges.push({from:this.id,to:child.id});
+    });
+    this.spawned=true;
+    const b=this.el.querySelector('.xbtn'); if(b)b.textContent='↺ طيّ';
+    drawEdges(); saveState(); updateStats();
+  }
+
+  destroy(cascade=true){
+    if(cascade){
+      state.edges.filter(e=>e.from===this.id).map(e=>e.to).forEach(id=>{
+        const n=state.nodes.find(n=>n.id===id); if(n)n.destroy(true);
+      });
+    }
+    state.edges=state.edges.filter(e=>e.from!==this.id&&e.to!==this.id);
+    state.nodes=state.nodes.filter(n=>n.id!==this.id);
+    this.el.remove();
+    drawEdges(); saveState(); updateStats();
+  }
+}
+
+// ════════════════════════════════
+// KB SEARCH
+// ════════════════════════════════
+function findKBChildren(label){
+  for(const tk of Object.values(TOPICS)){
+    if(tk.children){
+      for(const ch of tk.children){
+        if(ch.l===label) return ch.sub||[];
+        if(ch.sub){ for(const s of ch.sub){ if(s.l===label) return []; } }
+      }
+    }
+  }
+  return [];
+}
+
+function findClosestNode(label){
+  // Find node whose label is most similar to typed idea
+  if(!state.nodes.length) return null;
+  const lw=label.toLowerCase();
+  let best=null, bestScore=-1;
+  state.nodes.forEach(n=>{
+    if(n.type==='child'&&n.label.length<3) return;
+    const nl=n.label.toLowerCase();
+    let score=0;
+    // exact topic match
+    if(nl.includes(lw)||lw.includes(nl)) score+=10;
+    // shared characters
+    for(const c of lw){ if(nl.includes(c)) score++; }
+    if(score>bestScore){ bestScore=score; best=n; }
+  });
+  return best || state.nodes[state.nodes.length-1];
+}
+
+// ════════════════════════════════
+// DRAW EDGES
+// ════════════════════════════════
+function gc(node){const r=node.el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};}
+
+function edgeColor(fromType, toType){
+  if(fromType==='brain') return ['rgba(124,106,255,0.6)','rgba(124,106,255,0.15)'];
+  if(toType==='topic')   return ['rgba(245,196,0,0.5)','rgba(245,196,0,0.1)'];
+  if(toType==='idea')    return ['rgba(255,60,172,0.5)','rgba(255,60,172,0.1)'];
+  return ['rgba(0,255,224,0.4)','rgba(0,255,224,0.08)'];
+}
+
+function drawEdges(){
+  ctx.clearRect(0,0,W,H);
+  state.edges.forEach(e=>{
+    const f=state.nodes.find(n=>n.id===e.from), t=state.nodes.find(n=>n.id===e.to);
+    if(!f||!t) return;
+    const a=gc(f), b=gc(t);
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2-20;
+    const [c1,c2]=edgeColor(f.type,t.type);
+    const g=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+    g.addColorStop(0,c1); g.addColorStop(1,c2);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.quadraticCurveTo(mx,my,b.x,b.y);
+    ctx.strokeStyle=g; ctx.lineWidth=f.type==='brain'?2:1.5;
+    ctx.setLineDash(f.type==='brain'?[]:[ 5,6]); ctx.stroke(); ctx.setLineDash([]);
+    // dot at target
+    ctx.beginPath(); ctx.arc(b.x,b.y,3.5,0,Math.PI*2);
+    ctx.fillStyle=c1; ctx.fill();
+  });
+}
+
+// ════════════════════════════════
+// MODE
+// ════════════════════════════════
+let currentMode='topic';
+function setMode(m){
+  currentMode=m;
+  document.getElementById('btn-topic').classList.toggle('active',m==='topic');
+  document.getElementById('btn-idea').classList.toggle('active',m==='idea');
+  const inp=document.getElementById('main-input');
+  inp.placeholder = m==='topic'?'اختر موضوعاً من القائمة أو اكتبه...':'اكتب أي فكرة وستُربط تلقائياً...';
+  inp.className = m==='topic'?'topic-mode':'idea-mode';
+}
+
+// ════════════════════════════════
+// PILLS (topic shortcuts)
+// ════════════════════════════════
+const pillsBar=document.getElementById('pills-bar');
+Object.keys(TOPICS).forEach(k=>{
+  const p=document.createElement('div');
+  p.className='pill'; p.textContent=k;
+  p.addEventListener('touchstart',e=>{ e.preventDefault(); addTopic(k); },{passive:false});
+  p.addEventListener('click',()=>addTopic(k));
+  pillsBar.appendChild(p);
+});
+
+// ════════════════════════════════
+// ADD NODE
+// ════════════════════════════════
+document.getElementById('main-input').addEventListener('keydown',e=>{ if(e.key==='Enter') addNode(); });
+
+function addNode(){
+  const inp=document.getElementById('main-input');
+  const val=inp.value.trim();
+  if(!val) return;
+  if(currentMode==='topic') addTopicByLabel(val);
+  else addIdea(val);
+  inp.value='';
+}
+
+function addTopic(key){
+  addTopicByLabel(key);
+}
+
+function addTopicByLabel(key){
+  // Check if already exists
+  const found = Object.keys(TOPICS).find(k=>k===key||TOPICS[k]&&(key===TOPICS[k].tag||k.includes(key)||key.includes(k.replace(/^./,'').trim())));
+  const topicKey = found || key;
+  const brain = state.nodes.find(n=>n.type==='brain');
+  if(!brain) return;
+
+  // Avoid duplicates
+  const existingChild = state.edges.filter(e=>e.from===brain.id).map(e=>e.to)
+    .map(id=>state.nodes.find(n=>n.id===id)).filter(Boolean);
+  const alreadyHas = existingChild.find(n=>n.label===topicKey||(found&&n.label===topicKey));
+  if(alreadyHas){ toast('هذا الموضوع موجود مسبقاً'); alreadyHas.el.classList.add('open'); setTimeout(()=>alreadyHas.el.classList.remove('open'),800); return; }
+
+  const kbData = TOPICS[topicKey];
+  const angle = (state.edges.filter(e=>e.from===brain.id).length / 6) * Math.PI*2 - Math.PI/2;
+  const dist = 200 + Math.random()*40;
+  const nx = brain.x + Math.cos(angle)*dist;
+  const ny = brain.y + Math.sin(angle)*dist;
+
+  const label = kbData ? topicKey : key;
+  const tag   = kbData ? kbData.tag : 'موضوع';
+  const node  = new MNode(label, nx, ny, 'topic', tag, '', brain.id);
+  state.nodes.push(node);
+  state.edges.push({from:brain.id, to:node.id});
+
+  // If KB data, auto-queue children
+  if(kbData && kbData.children){
+    node._kbChildren = kbData.children;
+    node.spawnKB = function(){
+      if(this.spawned){
+        state.edges.filter(e=>e.from===this.id).map(e=>e.to).forEach(id=>{
+          const n=state.nodes.find(n=>n.id===id); if(n)n.destroy(false);
+        });
+        this.spawned=false;
+        const b=this.el.querySelector('.xbtn'); if(b)b.textContent='⊕ فرّع';
+        saveState(); updateStats(); return;
+      }
+      const count=this._kbChildren.length;
+      this._kbChildren.forEach((c,i)=>{
+        const a=(i/count)*Math.PI*2-Math.PI/2, d=170+Math.random()*40;
+        const cn=new MNode(c.l,this.x+Math.cos(a)*d,this.y+Math.sin(a)*d,'child',c.t,c.s||'',this.id);
+        cn._kbChildren=c.sub||[];
+        cn.spawnKB=node.spawnKB.bind(cn);
+        state.nodes.push(cn); state.edges.push({from:this.id,to:cn.id});
+      });
+      this.spawned=true;
+      const b=this.el.querySelector('.xbtn'); if(b)b.textContent='↺ طيّ';
+      drawEdges(); saveState(); updateStats();
+    };
+  }
+
+  drawEdges(); saveState(); updateStats();
+  toast(`تمت إضافة: ${label}`);
+
+  // Highlight pill
+  document.querySelectorAll('.pill').forEach(p=>{
+    p.classList.toggle('active', p.textContent===topicKey);
+    setTimeout(()=>p.classList.remove('active'),1500);
+  });
+}
+
+function addIdea(text){
+  const brain = state.nodes.find(n=>n.type==='brain');
+  if(!brain) return;
+  // Find best parent node
+  const parent = state.nodes.length>1 ? findClosestNode(text) : brain;
+  const angle = Math.random()*Math.PI*2;
+  const dist = 150 + Math.random()*60;
+  const nx = parent.x + Math.cos(angle)*dist;
+  const ny = parent.y + Math.sin(angle)*dist;
+  const node = new MNode(text, nx, ny, 'idea', 'فكرة', '', parent.id);
+  state.nodes.push(node);
+  state.edges.push({from:parent.id, to:node.id});
+  drawEdges(); saveState(); updateStats();
+  toast(`فكرة جديدة مرتبطة بـ: ${parent.label}`);
+}
+
+// ════════════════════════════════
+// STATS
+// ════════════════════════════════
+function updateStats(){
+  document.getElementById('s-nodes').textContent = state.nodes.length;
+  document.getElementById('s-edges').textContent = state.edges.length;
+}
+
+// ════════════════════════════════
+// TOAST
+// ════════════════════════════════
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.opacity='1';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.style.opacity='0',2200);
+}
+
+// ════════════════════════════════
+// PAN & PINCH
+// ════════════════════════════════
+let px,py,panning=false,pd0,ps0;
+document.body.addEventListener('touchstart',e=>{
+  if(e.touches.length===2){
+    panning=true;
+    px=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    py=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    pd0=Math.sqrt(dx*dx+dy*dy); ps0=scale;
+  }
+},{passive:true});
+document.body.addEventListener('touchmove',e=>{
+  if(e.touches.length===2&&panning){
+    const cx=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    const cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    offset.x+=cx-px; offset.y+=cy-py; px=cx; py=cy;
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    scale=Math.min(2.5,Math.max(0.25,ps0*(Math.sqrt(dx*dx+dy*dy)/pd0)));
+    state.nodes.forEach(n=>n.place()); drawEdges();
+  }
+},{passive:true});
+document.body.addEventListener('touchend',e=>{ if(e.touches.length<2)panning=false; },{passive:true});
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+function init(){
+  const loaded = loadState();
+  if(!loaded || !state.nodes.find(n=>n.type==='brain')){
+    // Create brain node
+    const cx = window.innerWidth/2, cy = window.innerHeight/2 - 30;
+    const brain = new MNode('🧠 عقلي', cx, cy, 'brain', 'العقل', 'نقطة البداية — كل شيء يتصل من هنا.', null);
+    state.nodes.push(brain);
+    saveState();
+    toast('مرحباً! أضف أول موضوع لعقلك 🧠');
+  }
+  updateStats();
+  setMode('topic');
+}
+
+// ════════════════════════════════
+// LOOP
+// ════════════════════════════════
+(function loop(){ drawEdges(); requestAnimationFrame(loop); })();
+
+init();
+</script>
+</body>
+</html>
